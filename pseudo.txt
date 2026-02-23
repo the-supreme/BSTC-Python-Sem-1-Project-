@@ -1,0 +1,617 @@
+DEFINE newUserSignIn(username, password, role):
+    CREATE STRING newUserText = ""
+    SET newUser = [username, password, user_role]
+    SET newUserText TO username + "|" + password + "|" + user_role
+    OPEN "users.txt" in APPEND mode
+    IF file is accessible THEN
+        WRITE newUserText TO file
+        CLOSE file
+    ELSE
+        DISPLAY "Error: Could not access user database"
+    ENDIF
+ENDDEFINE newUserSignIn()
+
+DEFINE generate_id(filename, prefix):
+    TRY
+        OPEN file with name filename for reading
+            READ all lines into list lines
+    CATCH file does not exist
+        RETURN prefix + "01"
+
+    CREATE INTEGER max_id = 0
+    CREATE numeric_part = ""
+    CREATE new_num = 0
+    FOR EACH line IN lines:
+        SPLIT line by "|" INTO list data
+        SET current_id_str TO data[0]
+
+        REMOVE prefix from current_id_str
+        STORE result in numeric_part
+
+        IF numeric_part contains only digits
+            CONVERT numeric_part TO integer current_num
+            IF current_num > max_id
+                SET max_id TO current_num
+            END IF
+        END IF
+    END FOR
+
+    SET new_num TO max_id + 1
+    FORMAT new_num as two digits
+    SET new_id TO prefix + formatted new_num
+
+    RETURN new_id
+
+ENDDEFINE generate_id()
+
+DEFINE update_profile(file, usrnm, pswrd)
+    CREATE newName = ""
+    CREATE newUsername = ""
+    CREATE newPassword = ""
+
+    OUTPUT("PLEASE ENTER NEW NAME: ")
+    INPUT into newName
+    OUTPUT("PLEASE ENTER NEW USERNAME: ")
+    INPUT into newUsername
+    OUTPUT("PLEASE ENTER NEW PASSWORD(A COMBINATION OF ALPHANUMERIC CHARACTERS): ")
+    INPUT into newPassword
+
+    OPEN file for reading
+        READ all lines into list lines
+        CLOSE file
+        
+    FOR EACH line IN lines:
+        SPLIT line by "|" INTO data
+        IF data[1] equals username AND data[2] equals password
+            UPDATE data[1] with newUsername
+            UPDATE data[2] with newPassword
+            UPDATE data[3] with newName
+            JOIN data using "|" and store in updatedLine
+        END IF
+    END FOR
+
+    OPEN file for writing
+    FOR EACH line IN lines
+        IF username in line is NOT equal to username
+            WRITE original line to file
+        ELSE
+            WRITE updatedLine to file
+            WRITE newline
+        END IF
+    END FOR
+    CLOSE file
+
+    OPEN "users.txt" for reading
+    READ all lines into list content
+    CLOSE file
+
+    FOR EACH line IN content
+        SPLIT line by "|" INTO data
+        IF data[0] equals username AND data[1] equals password
+            UPDATE data[0] with newUsername
+            UPDATE data[1] with newPassword
+            JOIN data using "|" and store in updatedUser
+            DISPLAY updatedUser
+        END IF
+    END FOR
+
+    OPEN "users.txt" for writing
+    FOR EACH line IN content
+        IF username in line is NOT equal to username
+            WRITE original line to file
+        ELSE
+            WRITE updatedUser to file
+            WRITE newline
+        END IF
+    END FOR
+    CLOSE file
+ENDDEFINE update_profile()
+
+DEFINE TransactionDataSync()
+
+    CREATE STRING ARRAY content
+    CREATE STRING ARRAY target_data
+    CREATE DATE last_transaction_date
+    CREATE DATE current_date
+
+    OPEN "transactions.txt" FOR READING
+    READ all lines INTO content
+    CLOSE file
+
+    target_data = SPLIT last element of content USING "|"
+
+    CONVERT target_data[4] TO DATE
+    STORE result IN last_transaction_date
+
+    current_date = GET CURRENT SYSTEM DATE
+
+    IF (YEAR(last_transaction_date) != YEAR(current_date)) OR
+       (MONTH(last_transaction_date) != MONTH(current_date)) THEN
+
+        OUTPUT("New month detected. Resetting enrollments...")
+
+        CREATE STRING ARRAY enrollment_lines
+        CREATE STRING ARRAY updated_enrollments
+
+        OPEN "enrollments.txt" FOR READING
+        READ all lines INTO enrollment_lines
+        CLOSE file
+
+        LOOP EACH line IN enrollment_lines
+
+            CREATE STRING ARRAY data
+            data = SPLIT line USING "|"
+
+            data[3] = "0"
+            data[4] = "Unpaid"
+
+            ADD JOIN data USING "|" TO updated_enrollments
+
+        ENDLOOP
+
+        OPEN "enrollments.txt" FOR WRITING
+        WRITE updated_enrollments INTO file
+        CLOSE file
+
+        OUTPUT("Data has been successfully synced with current month and year.")
+    ENDIF
+ENDDEFINE TransactionDataSync()
+
+DEFINE registerNewTrainee()
+    OUTPUT("==================================================")
+    OUTPUT("NEW TRAINEE REGISTRATION MENU")
+    OUTPUT("==================================================")
+
+    // Capture User Input
+    CREATE STRING traineeUsername = "", traineePassword = "", traineeName = ""
+    CREATE STRING traineePassport = "", traineeContact = "", traineeAddress = ""
+    CREATE STRING traineeEmail = ""
+
+    OUTPUT("Create a new trainee's USERNAME: ")
+    INPUT into traineeUsername
+    OUTPUT("Create a new trainee's PASSWORD: ")
+    INPUT into traineePassword
+    OUTPUT("Create a new trainee's NAME: ")
+    INPUT into traineeName
+    OUTPUT("Create a new trainee's PASSPORT NUM/IC NUM: ")
+    INPUT into traineePassport
+    OUTPUT("Create a new trainee's CONTACT NUMBER: ")
+    INPUT into traineeContact
+    OUTPUT("Create a new trainee's ADDRESS: ")
+    INPUT into traineeAddress
+    OUTPUT("Create a new trainee's EMAIL: ")
+    INPUT into traineeEmail
+    newTrainee = [traineeUsername, traineePassword, traineeName, traineePassport, traineeEmail, traineeContact, traineeAddress]
+
+    // Handle Sport Choices from File
+    CREATE LIST sport_choices = []
+    OPEN "sport_programs.txt" FOR READING
+    FOR EACH line IN "sport_programs.txt"
+        CREATE STRING data = split line by "|"
+        APPEND data[1] TO sport_choices
+    ENDLOOP
+
+    OUTPUT("Sport Training Choices")
+    CREATE INTEGER i = 0
+    LOOP i FROM 0 TO (
+        
+        length of sport_choices - 1) STEP 1
+        OUTPUT(i + 1, ". ", sport_choices[i])
+    ENDLOOP
+
+    OUTPUT("Please enter trainee's Sport Training Programs: ")
+    CREATE STRING traineeSportChoice = ""
+    INPUT into traineeSportChoice
+    CREATE INTEGER traineeSportChoice = PARSE traineeSportChoiceInput into list
+
+    // Process Selected Sports
+    CREATE STRING traineeSportID = []
+    FOR EACH sportIndex IN traineeSportChoice
+        OPEN "sport_programs.txt" FOR READING
+        FOR EACH line IN "sport_programs.txt"
+            CREATE STRING data = split line by "|"
+            IF (data[1] == sport_choices[sportIndex]) THEN
+                APPEND data[0] TO traineeSportID
+            ENDIF
+        NEXT line
+    NEXT sportIndex
+    ENDLOOP
+
+    // Generate ID and Save Trainee Data
+    CREATE STRING newTraineeID = generate_id("trainee.txt", "TR")
+    CREATE STRING newTraineeText = newTraineeID + "|" + traineeUsername + "|" + traineePassword + "|" + traineeName + "|" + traineePassport + "|" + traineeEmail + "|" + traineeContact + "|" + traineeAddress
+
+    OPEN "trainee.txt" FOR APPENDING
+    WRITE newTraineeText TO "trainee.txt"
+
+    // Handle Enrollments
+    CREATE STRING totalFee = "0", amountPaid = "0", status = "Unpaid"
+    FOR EACH sport IN traineeSportID
+        CREATE STRING newEnrollmentData = newTraineeID + "|" + sport + "|" + totalFee + "|" + amountPaid + "|" + status
+        OPEN "enrollments.txt" FOR APPENDING
+        WRITE enrollmentRecord TO "enrollments.txt"
+    NEXT sportID
+
+    // Finalize Registration
+    newUserSignIn(traineeUsername, traineePassword, "Trainee")
+    OUTPUT("Registration Complete!")
+
+ENDDEFINE registerNewTrainee()
+
+DEFINE updateSportProgramme()
+    OUTPUT("==================================================")
+    OUTPUT("UPDATE TRAINEE'S SPORT TRAINING PROGRAMME MENU")
+    OUTPUT("==================================================")
+
+    OUTPUT("Please select an action: ")
+    OUTPUT("1. Delete trainee's program")
+    OUTPUT("2. Add trainee's new program")
+    
+    CREATE STRING userChoice = ""
+    INPUT into userChoice
+
+    CREATE STRING traineeUsername = ""
+    OUTPUT("Enter trainee's USERNAME: ")
+    INPUT into traineeUsername
+
+    // Find Trainee ID from file
+    CREATE STRING traineeID = ""
+    OPEN "trainee.txt" FOR READING
+    FOR EACH line IN "trainee.txt"
+        CREATE STRING data = split line by "|"
+        IF (data[1] == traineeUsername) THEN
+            traineeID = data[0]
+        ENDIF
+    NEXT line
+    ENDLOOP
+
+    IF (userChoice == "1") THEN
+        // DELETE LOGIC
+        CREATE STRING sport_choices = []
+        CREATE STRING sport_choicesNames = []
+        
+        OPEN "enrollments.txt" FOR READING
+        FOR EACH line IN "enrollments.txt"
+            CREATE STRING data = split line by "|"
+            IF (data[0] == traineeID) THEN
+                APPEND data[1] TO sport_choices
+            ENDIF
+        NEXT line
+        ENDLOOP
+
+        FOR EACH sportID IN sport_choices
+            OPEN "sport_programs.txt" FOR READING
+            FOR EACH line IN "sport_programs.txt"
+                CREATE STRING data = split line by "|"
+                IF (data[0] == sportID) THEN
+                    APPEND data[1] TO sport_choicesNames
+                ENDIF
+            NEXT line
+        NEXT sportID
+        ENDLOOP
+
+        OUTPUT("Please choose which training program to delete: ")
+        CREATE INTEGER i = 0
+        LOOP i FROM 0 TO (length of sport_choicesNames - 1) STEP 1
+            OUTPUT(i + 1, ". ", sport_choicesNames[i])
+        ENDLOOP
+
+        CREATE INTEGER deleteChoice = 0
+        INPUT into deleteChoice
+        deleteChoice = deleteChoice - 1
+
+        // Rewrite file without the deleted record
+        OPEN "enrollments.txt" FOR READING
+        CREATE STRING allContent = read all lines
+        CLOSE file
+
+        OPEN "enrollments.txt" FOR WRITING
+        FOR EACH line IN allContent
+            CREATE STRING data = split line by "|"
+            IF (data[0] != traineeID AND data[1] != sport_choices[deleteChoice]) THEN
+                WRITE line TO "enrollments.txt"
+            ENDIF
+        NEXT line
+        ENDLOOP
+        CLOSE FILE
+
+        OUTPUT("Deletion was successful")
+
+    ELSE IF (userChoice == "2") THEN
+        // ADD LOGIC
+        CREATE STRING all_sports = []
+        OPEN "sport_programs.txt" FOR READING
+        FOR EACH line IN "sport_programs.txt"
+            CREATE STRING data = split line by "|"
+            APPEND data[1] TO all_sports
+        NEXT line
+
+        OUTPUT("Sport Training Choices")
+        CREATE INTEGER j = 0
+        LOOP j FROM 0 TO (length of all_sports - 1) STEP 1
+            OUTPUT(j + 1, ". ", all_sports[j])
+        ENDLOOP
+
+        OUTPUT("Enter new Sport Training Program (e.g., 1, 2): ")
+        CREATE STRING traineeSportChoiceInput = ""
+        INPUT into traineeSportChoiceInput
+        CREATE INTEGER traineeSportChoice = parse traineeSportChoiceInput into list
+
+        CREATE LIST traineeSportID = []
+        CREATE LIST traineeSport = []
+        FOR EACH choiceIndex IN traineeSportChoice
+            OPEN "sport_programs.txt" FOR READING
+            FOR EACH line IN "sport_programs.txt"
+                CREATE STRING data = split line by "|"
+                IF (data[1] == all_sports[choiceIndex]) THEN
+                    APPEND data[0] TO traineeSportID
+                    APPEND data[1] TO traineeSport
+                ENDIF
+            NEXT line
+        NEXT choiceIndex
+
+        CREATE STRING totalFee = "0", amountPaid = "0", status = "Unpaid"
+        FOR EACH sID IN traineeSportID
+            CREATE STRING enrollmentRecord = traineeID + "|" + sID + "|" + totalFee + "|" + amountPaid + "|" + status
+            OPEN "enrollments.txt" FOR APPENDING
+            WRITE enrollmentRecord TO "enrollments.txt"
+        NEXT sID
+
+    ELSE
+        OUTPUT("Invalid input. Please try again.")
+    ENDIF
+
+ENDDEFINE updateSportProgramme()
+
+DEFINE acceptPayment()
+    OUTPUT("ACCEPT PAYMENT FROM TRAINEE MENU")
+
+    CREATE STRING traineesUnpaidPrograms = []
+    CREATE STRING traineesUnpaidProgramNames = []
+    CREATE STRING traineeUsername = ""
+    CREATE STRING traineeID = "", traineeName = ""
+
+    OUTPUT("Please input the trainee's USERNAME: ")
+    INPUT into traineeUsername
+
+    // Find Trainee ID
+    OPEN "trainee.txt" FOR READING
+    FOR EACH line IN "trainee.txt"
+        CREATE STRING data = split line by "|"
+        IF (data[1] == traineeUsername) THEN
+            traineeID = data[0]
+            traineeName = data[1]
+        ENDIF
+    NEXT line
+    ENDLOOP
+
+    // Step 2: Find Unpaid Programs in enrollments
+    OPEN "enrollments.txt" FOR READING
+    FOR EACH line IN "enrollments.txt"
+        CREATE STRING data = split line by "|"
+        IF (data[0] == traineeID AND data[4] != "Paid") THEN
+            APPEND data[1] TO traineesUnpaidPrograms
+        ENDIF
+    NEXT line
+    ENDLOOP
+
+    // Step 3: Get Program Names
+    FOR EACH pID IN traineesUnpaidPrograms
+        OPEN "sport_programs.txt" FOR READING
+        FOR EACH line IN "sport_programs.txt"
+            CREATE STRING data = split line by "|"
+            IF (data[0] == pID) THEN
+                APPEND data[1] TO traineesUnpaidProgramNames
+            ENDIF
+        NEXT line
+    NEXT pID
+    ENDLOOP
+
+    // Step 4: User selects program and enters payment
+    OUTPUT("Which program do you wish to pay for?")
+    CREATE INTEGER i = 0
+    LOOP i FROM 0 TO (length of traineesUnpaidProgramNames - 1) STEP 1
+        OUTPUT(i + 1, ". ", traineesUnpaidProgramNames[i])
+    ENDLOOP
+
+    CREATE INTEGER userChoice = 0
+    INPUT into userChoice
+    userChoice = userChoice - 1
+
+    CREATE STRING sportProgramPaymentChoice = traineesUnpaidPrograms[userChoice]
+    CREATE STRING sportProgramPaymentChoiceName = traineesUnpaidProgramNames[userChoice]
+
+    OUTPUT("How much you wish to pay?")
+    CREATE FLOAT paymentValue = 0.0
+    INPUT into paymentValue
+
+    // Step 5: Update Enrollment Records
+    CREATE STRING updatedText = []
+    CREATE FLOAT remainingDue = 0.0
+    
+    OPEN "enrollments.txt" FOR READING
+    FOR EACH line IN "enrollments.txt"
+        CREATE STRING data = split line by "|"
+        IF (data[0] == traineeID AND data[1] == sportProgramPaymentChoice) THEN
+            CREATE FLOAT target_data = parse data[3] to float
+            CREATE FLOAT newPaymentValue = paymentValue + target_data
+            data[3] = string(newPaymentValue)
+            
+            remainingDue = (parse data[2] to float) - newPaymentValue
+            
+            IF (newPaymentValue < (parse data[2] to float)) THEN
+                data[4] = "Pending"
+            ELSE
+                data[4] = "Paid"
+            ENDIF
+        ENDIF
+        APPEND (join data with "|") TO updatedText
+    NEXT line
+    ENDLOOP
+
+    // Write updates back to file
+    OPEN "enrollments.txt" FOR WRITING
+    FOR EACH line IN updatedText
+        WRITE line TO "enrollments.txt"
+    NEXT line
+    ENDLOOP
+
+    // Step 6: Log Transaction
+    CREATE STRING today = get current date
+    CREATE STRING now = get current time
+    CREATE STRING newTransactionID = CALL generate_id("transactions.txt", "TX")
+    CREATE STRING newTransactionText = newTransactionID + "|" + traineeID + "|" + sportProgramPaymentChoice + "|" + string(paymentValue) + "|" + today
+
+    OPEN "transactions.txt" FOR APPENDING
+    WRITE newTransactionText TO "transactions.txt"
+
+    // Step 7: Print Receipt
+    OUTPUT("==================================================")
+    OUTPUT("BRILLIANT SPORT-TRAINING CENTRE - OFFICIAL RECEIPT")
+    OUTPUT("==================================================")
+    OUTPUT("Date            : ", today)
+    OUTPUT("Time            : ", now)
+    OUTPUT("Transaction     : ", newTransactionID)
+    OUTPUT("Received by     : ", receptionistID, " (", receptionistName, ")")
+    OUTPUT("==================================================")
+    OUTPUT("Paid by         : ", traineeID, " (", traineeName, ")")
+    OUTPUT("Program         : ", sportProgramPaymentChoice, " (", sportProgramPaymentChoiceName, ")")
+    OUTPUT("==================================================")
+    OUTPUT("PAYMENT AMOUNT  : RM ", paymentValue)
+    OUTPUT("Remaining Due   : RM ", remainingDue)
+    OUTPUT("==================================================")
+    OUTPUT("THANK YOU FOR YOUR PAYMENT!")
+
+ENDDEFINE acceptPayment()
+
+DEFINE deleteTrainee()
+    OUTPUT("DELETE TRAINEE WHO FINISHED TRAINING MENU")
+    
+    CREATE STRING deleteTraineeUsername = ""
+    CREATE STRING deleteTraineeID = ""
+    
+    OUTPUT("Enter trainee's USERNAME: ")
+    INPUT into deleteTraineeUsername
+
+    // Remove from trainee.txt and capture the ID
+    OPEN "trainee.txt" FOR READING
+    CREATE STRING traineeContent = read all lines
+    
+    OPEN "trainee.txt" FOR WRITING
+    FOR EACH line IN traineeContent
+        CREATE STRING data = split line by "|"
+        IF (data[1] != deleteTraineeUsername) THEN
+            WRITE line TO "trainee.txt"
+        ELSE
+            // Store the ID of the trainee being deleted for the next step
+            deleteTraineeID = data[0]
+        ENDIF
+    NEXT line
+    ENDLOOP
+
+    // Remove associated records from enrollments.txt
+    OPEN "enrollments.txt" FOR READING
+    CREATE STRING enrollmentContent = read all lines
+    
+    OPEN "enrollments.txt" FOR WRITING
+    FOR EACH line IN enrollmentContent
+        CREATE STRING data = split line by "|"
+        // If the ID does NOT match the deleted trainee, keep the record
+        IF (data[0] != deleteTraineeID) THEN
+            WRITE line TO "enrollments.txt"
+        ENDIF
+    NEXT line
+    ENDLOOP
+
+    OUTPUT("Deletion Successful.")
+
+ENDDEFINE deleteTrainee()
+
+DEFINE receptionist_menu()
+    CREATE STRING actionChoice = ""
+    CREATE BOOLEAN exitMenu = FALSE
+
+    WHILE (exitMenu == FALSE) DO
+        // Fetch Receptionist Details
+        OPEN "receptionist.txt" FOR READING
+        FOR EACH line IN "receptionist.txt"
+            CREATE STRING rData = split line by "|"
+            IF (rData[1] == username) THEN
+                OUTPUT("Welcome back ", rData[3])
+                CREATE STRING receptionistID = rData[0]
+                CREATE STRING receptionistName = rData[1]
+            ENDIF
+        NEXT line
+
+        OUTPUT("==================================================")
+        OUTPUT("Please select an action: ")
+        OUTPUT("==================================================")
+        OUTPUT("1. Update Profile")
+        OUTPUT("2. Register New Trainee")
+        OUTPUT("3. Update Sport Training Programme")
+        OUTPUT("4. Accept Payment")
+        OUTPUT("5. Delete Trainee")
+        OUTPUT("6. Exit")
+        OUTPUT("==================================================")
+
+        INPUT into actionChoice
+
+        IF (actionChoice == "1") THEN
+            CALL update_profile("receptionist.txt", username, password)
+        ELSE IF (actionChoice == "2") THEN
+            CALL registerNewTrainee()
+        ELSE IF (actionChoice == "3") THEN
+            CALL updateSportProgramme()
+        ELSE IF (actionChoice == "4") THEN
+            CALL acceptPayment()
+        ELSE IF (actionChoice == "5") THEN
+            CALL deleteTrainee()
+        ELSE IF (actionChoice == "6") THEN
+            OUTPUT("Exiting...")
+            OUTPUT("Thank you for visiting BSTC.")
+            exitMenu = TRUE
+        ELSE
+            OUTPUT("Invalid input. Please try again.")
+        ENDIF
+    ENDLOOP
+ENDDEFINE receptionist_menu()
+
+BEGIN MAINLOGIC
+    CREATE STRING username = "", password = "", user_role = "None"
+    
+    OUTPUT("Welcome to Brilliant Sport Training Centre Online Management System!")
+    transaction_data_sync()
+    
+    OUTPUT("Please enter your username: ")
+    INPUT into username
+    OUTPUT("Please enter your password: ")
+    INPUT into password
+
+    // Authentication Logic
+    OPEN "users.txt" FOR READING
+    FOR EACH line IN "users.txt"
+        CREATE STRING data = split line by "|"
+        IF (data[0] == username AND data[1] == password) THEN
+            user_role = data[2]
+        ENDIF
+    NEXT line
+
+    IF (user_role == "None") THEN
+        OUTPUT("Invalid credentials. Try again.")
+    ELSE
+        OUTPUT("Login Successful. User Role: ", user_role)
+        
+        // Routing Logic
+        IF (user_role == "Admin") THEN
+            CALL admin_menu()
+        ELSE IF (user_role == "Receptionist") THEN
+            CALL receptionist_menu()
+        ELSE IF (user_role == "Trainer") THEN
+            CALL coach_menu()
+        ELSE IF (user_role == "Trainee") THEN
+            CALL trainee_menu()
+        ELSE
+            OUTPUT("Invalid user role.")
+        ENDIF
+    ENDIF
+END MAINLOGIC
