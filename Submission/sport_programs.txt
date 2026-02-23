@@ -1,6 +1,0 @@
-T01|Football|C01|200|Mon-10am|Field A
-T02|Tennis|C02|250|Tue-4pm|Court 1
-T03|Badminton|C03|150|Wed-6pm|Hall B
-T04|Squash|C04|180|Thu-5pm|Court 3
-T05|Swimming|C05|300|Sat-9am|Pool A
-T06|Football Pro|C01|350|Sun-10am|Field B

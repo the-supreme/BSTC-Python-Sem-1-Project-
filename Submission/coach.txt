@@ -1,5 +1,0 @@
-C01|coach1|pass1|Mike Ross
-C02|coach2|pass2|Raju W
-C03|coach3|pass3|Lee CW
-C04|coach4|pass4|Nicol D
-C05|coach5|pass5|Pandelela
