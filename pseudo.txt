@@ -1104,8 +1104,6 @@ DEFINE ViewPaymentStatus(trainee_id)
     ENDIF
 ENDDEFINE ViewPaymentStatus()
 
-// ==================== TRAINEE MENU ====================
-
 DEFINE TraineeMenu(username, password)
     CREATE STRING trainee_id = ""
     CREATE LIST trainee_data = []
