@@ -576,6 +576,590 @@ DEFINE receptionist_menu()
     ENDLOOP
 ENDDEFINE receptionist_menu()
 
+BEGIN TRAINEE_MODULE
+
+// ==================== CONSTANTS ====================
+CREATE STRING USER_FILE = "users.txt"
+CREATE STRING TRAINEE_FILE = "trainee.txt"
+CREATE STRING SPORT_PROGRAM_FILE = "sport_programs.txt"
+CREATE STRING ENROLLMENT_FILE = "enrollments.txt"
+CREATE STRING REQUEST_FILE = "requests.txt"
+CREATE STRING TRANSACTION_FILE = "transactions.txt"
+
+// ==================== HELPER FUNCTIONS ====================
+
+DEFINE ReadFileLines(filename)
+    TRY
+        CREATE LIST lines = []
+        OPEN filename FOR READING
+        READ all lines INTO lines
+        CLOSE filename
+        RETURN (lines)
+    CATCH FileNotFoundError
+        RETURN ([])
+    ENDTRY
+ENDDEFINE ReadFileLines()
+
+DEFINE WriteFileLines(filename, lines)
+    OPEN filename FOR WRITING
+    WRITE all lines TO file
+    CLOSE filename
+ENDDEFINE WriteFileLines()
+
+DEFINE AppendToFile(filename, content)
+    OPEN filename FOR APPENDING
+    WRITE content + newline TO file
+    CLOSE filename
+ENDDEFINE AppendToFile()
+
+DEFINE FindUserByUsername(filename, username)
+    CREATE LIST lines = []
+    CREATE LIST data = []
+    lines = ReadFileLines(filename)
+    
+    FOR EACH line IN lines
+        data = SPLIT line BY "|"
+        IF LENGTH(data) > 1 AND data[1] == username THEN
+            RETURN (data)
+        ENDIF
+    ENDFOR
+    
+    RETURN (NULL)
+ENDDEFINE FindUserByUsername()
+
+DEFINE GetTraineeIdByUsername(username)
+    CREATE LIST lines = []
+    CREATE LIST data = []
+    lines = ReadFileLines(TRAINEE_FILE)
+    
+    FOR EACH line IN lines
+        data = SPLIT line BY "|"
+        IF LENGTH(data) > 1 AND data[1] == username THEN
+            RETURN (data[0])
+        ENDIF
+    ENDFOR
+    
+    RETURN (NULL)
+ENDDEFINE GetTraineeIdByUsername()
+
+DEFINE ViewTrainingSchedule(trainee_id)
+    CREATE LIST enrollments = []
+    CREATE LIST sport_programs = []
+    CREATE LIST trainee_sports = []
+    CREATE LIST data = []
+    CREATE BOOLEAN found_programs = False
+    
+    OUTPUT("==================================================")
+    OUTPUT("VIEW TRAINING SCHEDULE")
+    OUTPUT("==================================================")
+    
+    enrollments = ReadFileLines(ENROLLMENT_FILE)
+    sport_programs = ReadFileLines(SPORT_PROGRAM_FILE)
+    
+    // Find all sport IDs for this trainee
+    FOR EACH enrollment IN enrollments
+        data = SPLIT enrollment BY "|"
+        IF LENGTH(data) >= 2 AND data[0] == trainee_id THEN
+            APPEND data[1] TO trainee_sports
+        ENDIF
+    ENDFOR
+    
+    IF LENGTH(trainee_sports) == 0 THEN
+        OUTPUT("No enrolled programs found.")
+        RETURN
+    ENDIF
+    
+    OUTPUT("Your Training Schedule:")
+    OUTPUT("----------------------------------------")
+    
+    FOR EACH program IN sport_programs
+        data = SPLIT program BY "|"
+        IF LENGTH(data) >= 6 THEN
+            FOR EACH sport_id IN trainee_sports
+                IF data[0] == sport_id THEN
+                    OUTPUT("Sport: " + data[1])
+                    OUTPUT("Schedule: " + data[4])
+                    OUTPUT("Venue: " + data[5])
+                    OUTPUT("Coach: " + data[2])
+                    OUTPUT("----------------------------------------")
+                    found_programs = True
+                ENDIF
+            ENDFOR
+        ENDIF
+    ENDFOR
+    
+    IF found_programs == False THEN
+        OUTPUT("No schedule information available for enrolled programs.")
+    ENDIF
+ENDDEFINE ViewTrainingSchedule()
+
+DEFINE SendChangeRequest(trainee_id)
+    CREATE LIST enrollments = []
+    CREATE LIST current_programs = []
+    CREATE LIST sport_programs = []
+    CREATE LIST program_names = []
+    CREATE LIST available_programs = []
+    CREATE LIST data = []
+    CREATE INTEGER counter = 0
+    CREATE INTEGER choice = 0
+    CREATE INTEGER new_choice = 0
+    CREATE STRING current_prog_id = ""
+    CREATE STRING new_prog_id = ""
+    CREATE STRING request_id = ""
+    CREATE STRING prog_name = ""
+    CREATE LIST request_data = []
+    
+    OUTPUT("==================================================")
+    OUTPUT("SEND CHANGE REQUEST")
+    OUTPUT("==================================================")
+    
+    enrollments = ReadFileLines(ENROLLMENT_FILE)
+    
+    // Get trainee's current programs
+    FOR EACH enrollment IN enrollments
+        data = SPLIT enrollment BY "|"
+        IF LENGTH(data) >= 2 AND data[0] == trainee_id THEN
+            APPEND data[1] TO current_programs
+        ENDIF
+    ENDFOR
+    
+    IF LENGTH(current_programs) == 0 THEN
+        OUTPUT("You are not enrolled in any programs.")
+        RETURN
+    ENDIF
+    
+    // Display current programs
+    OUTPUT("Current Enrollments:")
+    sport_programs = ReadFileLines(SPORT_PROGRAM_FILE)
+    counter = 1
+    
+    FOR EACH prog_id IN current_programs
+        prog_name = "Unknown"
+        FOR EACH program IN sport_programs
+            data = SPLIT program BY "|"
+            IF LENGTH(data) >= 2 AND data[0] == prog_id THEN
+                prog_name = data[1]
+            ENDIF
+        ENDFOR
+        APPEND prog_name TO program_names
+        OUTPUT(counter + ". " + prog_name + " (ID: " + prog_id + ")")
+        counter = counter + 1
+    ENDFOR
+    
+    // Select program to change
+    OUTPUT("Select program to change (1-" + LENGTH(current_programs) + "): ")
+    INPUT into choice
+    choice = choice - 1
+    
+    IF choice >= 0 AND choice < LENGTH(current_programs) THEN
+        current_prog_id = current_programs[choice]
+    ELSE
+        OUTPUT("ERROR: Invalid selection!")
+        RETURN
+    ENDIF
+    
+    // Display all available programs (excluding current one)
+    OUTPUT("Available Programs:")
+    available_programs = []
+    
+    FOR EACH program IN sport_programs
+        data = SPLIT program BY "|"
+        IF LENGTH(data) >= 2 AND data[0] != current_prog_id THEN
+            APPEND [data[0], data[1]] TO available_programs
+        ENDIF
+    ENDFOR
+    
+    IF LENGTH(available_programs) == 0 THEN
+        OUTPUT("No other programs available.")
+        RETURN
+    ENDIF
+    
+    counter = 1
+    FOR EACH prog IN available_programs
+        OUTPUT(counter + ". " + prog[1] + " (ID: " + prog[0] + ")")
+        counter = counter + 1
+    ENDFOR
+    
+    // Select new program
+    OUTPUT("Select new program (1-" + LENGTH(available_programs) + "): ")
+    INPUT into new_choice
+    new_choice = new_choice - 1
+    
+    IF new_choice >= 0 AND new_choice < LENGTH(available_programs) THEN
+        new_prog_id = available_programs[new_choice][0]
+    ELSE
+        OUTPUT("ERROR: Invalid selection!")
+        RETURN
+    ENDIF
+    
+    // Generate request ID
+    request_id = GenerateId(REQUEST_FILE, "REQ")
+    
+    // Create request record
+    request_data = [request_id, trainee_id, current_prog_id, new_prog_id, "Pending"]
+    AppendToFile(REQUEST_FILE, JOIN(request_data, "|"))
+    
+    OUTPUT("✓ Request sent successfully!")
+    OUTPUT("  Request ID: " + request_id)
+    OUTPUT("  From: " + program_names[choice] + " → To: " + available_programs[new_choice][1])
+ENDDEFINE SendChangeRequest()
+
+DEFINE UpdatePendingRequest(trainee_id)
+    CREATE LIST requests = []
+    CREATE LIST pending_requests = []
+    CREATE LIST sport_programs = []
+    CREATE LIST available_programs = []
+    CREATE LIST data = []
+    CREATE LIST lines = []
+    CREATE LIST updated_lines = []
+    CREATE INTEGER counter = 0
+    CREATE INTEGER choice = 0
+    CREATE INTEGER new_choice = 0
+    CREATE STRING current_name = ""
+    CREATE STRING new_name = ""
+    CREATE STRING new_prog_id = ""
+    CREATE BOOLEAN updated = False
+    CREATE LIST selected_req = []
+    
+    OUTPUT("==================================================")
+    OUTPUT("UPDATE PENDING REQUEST")
+    OUTPUT("==================================================")
+    
+    requests = ReadFileLines(REQUEST_FILE)
+    
+    // Get all pending requests for this trainee
+    FOR EACH req IN requests
+        data = SPLIT req BY "|"
+        IF LENGTH(data) >= 5 AND data[1] == trainee_id AND data[4] == "Pending" THEN
+            APPEND data TO pending_requests
+        ENDIF
+    ENDFOR
+    
+    IF LENGTH(pending_requests) == 0 THEN
+        OUTPUT("No pending requests found.")
+        RETURN
+    ENDIF
+    
+    // Display pending requests
+    OUTPUT("Pending Requests:")
+    sport_programs = ReadFileLines(SPORT_PROGRAM_FILE)
+    counter = 1
+    
+    FOR EACH req IN pending_requests
+        current_name = "Unknown"
+        new_name = "Unknown"
+        
+        FOR EACH program IN sport_programs
+            data = SPLIT program BY "|"
+            IF LENGTH(data) >= 2 THEN
+                IF data[0] == req[2] THEN
+                    current_name = data[1]
+                ENDIF
+                IF data[0] == req[3] THEN
+                    new_name = data[1]
+                ENDIF
+            ENDIF
+        ENDFOR
+        
+        OUTPUT(counter + ". Request ID: " + req[0])
+        OUTPUT("   From: " + current_name + " → To: " + new_name)
+        OUTPUT("")
+        counter = counter + 1
+    ENDFOR
+    
+    // Select request to update
+    OUTPUT("Select request to update (1-" + LENGTH(pending_requests) + "): ")
+    INPUT into choice
+    choice = choice - 1
+    
+    IF choice >= 0 AND choice < LENGTH(pending_requests) THEN
+        selected_req = pending_requests[choice]
+    ELSE
+        OUTPUT("ERROR: Invalid selection!")
+        RETURN
+    ENDIF
+    
+    // Display available programs for change
+    OUTPUT("Available Programs:")
+    available_programs = []
+    
+    FOR EACH program IN sport_programs
+        data = SPLIT program BY "|"
+        IF LENGTH(data) >= 2 AND data[0] != selected_req[2] THEN
+            APPEND [data[0], data[1]] TO available_programs
+        ENDIF
+    ENDFOR
+    
+    counter = 1
+    FOR EACH prog IN available_programs
+        OUTPUT(counter + ". " + prog[1] + " (ID: " + prog[0] + ")")
+        counter = counter + 1
+    ENDFOR
+    
+    // Select new program
+    OUTPUT("Select new program (1-" + LENGTH(available_programs) + "): ")
+    INPUT into new_choice
+    new_choice = new_choice - 1
+    
+    IF new_choice >= 0 AND new_choice < LENGTH(available_programs) THEN
+        new_prog_id = available_programs[new_choice][0]
+    ELSE
+        OUTPUT("ERROR: Invalid selection!")
+        RETURN
+    ENDIF
+    
+    // Update the request
+    lines = ReadFileLines(REQUEST_FILE)
+    updated_lines = []
+    updated = False
+    
+    FOR EACH line IN lines
+        data = SPLIT line BY "|"
+        IF LENGTH(data) >= 5 AND data[0] == selected_req[0] THEN
+            data[3] = new_prog_id
+            APPEND JOIN(data, "|") + newline TO updated_lines
+            updated = True
+        ELSE
+            APPEND line TO updated_lines
+        ENDIF
+    ENDFOR
+    
+    IF updated == True THEN
+        WriteFileLines(REQUEST_FILE, updated_lines)
+        OUTPUT("✓ Request updated successfully!")
+    ELSE
+        OUTPUT("ERROR: Failed to update request!")
+    ENDIF
+ENDDEFINE UpdatePendingRequest()
+
+DEFINE DeletePendingRequest(trainee_id)
+    CREATE LIST requests = []
+    CREATE LIST pending_requests = []
+    CREATE LIST sport_programs = []
+    CREATE LIST lines = []
+    CREATE LIST updated_lines = []
+    CREATE LIST data = []
+    CREATE INTEGER counter = 0
+    CREATE INTEGER choice = 0
+    CREATE STRING request_id_to_delete = ""
+    CREATE STRING confirm = ""
+    CREATE STRING current_name = ""
+    CREATE STRING new_name = ""
+    
+    OUTPUT("==================================================")
+    OUTPUT("DELETE PENDING REQUEST")
+    OUTPUT("==================================================")
+    
+    requests = ReadFileLines(REQUEST_FILE)
+    
+    // Get all pending requests for this trainee
+    FOR EACH req IN requests
+        data = SPLIT req BY "|"
+        IF LENGTH(data) >= 5 AND data[1] == trainee_id AND data[4] == "Pending" THEN
+            APPEND data TO pending_requests
+        ENDIF
+    ENDFOR
+    
+    IF LENGTH(pending_requests) == 0 THEN
+        OUTPUT("No pending requests found.")
+        RETURN
+    ENDIF
+    
+    // Display pending requests
+    OUTPUT("Pending Requests:")
+    sport_programs = ReadFileLines(SPORT_PROGRAM_FILE)
+    counter = 1
+    
+    FOR EACH req IN pending_requests
+        current_name = "Unknown"
+        new_name = "Unknown"
+        
+        FOR EACH program IN sport_programs
+            data = SPLIT program BY "|"
+            IF LENGTH(data) >= 2 THEN
+                IF data[0] == req[2] THEN
+                    current_name = data[1]
+                ENDIF
+                IF data[0] == req[3] THEN
+                    new_name = data[1]
+                ENDIF
+            ENDIF
+        ENDFOR
+        
+        OUTPUT(counter + ". Request ID: " + req[0])
+        OUTPUT("   From: " + current_name + " → To: " + new_name)
+        OUTPUT("")
+        counter = counter + 1
+    ENDFOR
+    
+    // Select request to delete
+    OUTPUT("Select request to delete (1-" + LENGTH(pending_requests) + "): ")
+    INPUT into choice
+    choice = choice - 1
+    
+    IF choice >= 0 AND choice < LENGTH(pending_requests) THEN
+        request_id_to_delete = pending_requests[choice][0]
+    ELSE
+        OUTPUT("ERROR: Invalid selection!")
+        RETURN
+    ENDIF
+    
+    // Confirm deletion
+    OUTPUT("Confirm deletion of request " + request_id_to_delete + "? (yes/no): ")
+    INPUT into confirm
+    confirm = LOWERCASE(confirm)
+    
+    IF confirm != "yes" THEN
+        OUTPUT("Deletion cancelled.")
+        RETURN
+    ENDIF
+    
+    // Delete the request
+    lines = ReadFileLines(REQUEST_FILE)
+    updated_lines = []
+    
+    FOR EACH line IN lines
+        data = SPLIT line BY "|"
+        IF LENGTH(data) >= 1 AND data[0] != request_id_to_delete THEN
+            APPEND line TO updated_lines
+        ENDIF
+    ENDFOR
+    
+    WriteFileLines(REQUEST_FILE, updated_lines)
+    OUTPUT("✓ Request deleted successfully!")
+ENDDEFINE DeletePendingRequest()
+
+DEFINE ViewPaymentStatus(trainee_id)
+    CREATE LIST enrollments = []
+    CREATE LIST sport_programs = []
+    CREATE LIST program_names = []
+    CREATE LIST data = []
+    CREATE LIST prog = []
+    CREATE FLOAT total_due = 0.0
+    CREATE FLOAT total_paid = 0.0
+    CREATE FLOAT balance_due = 0.0
+    CREATE FLOAT total_fee = 0.0
+    CREATE FLOAT paid = 0.0
+    CREATE FLOAT balance = 0.0
+    CREATE STRING prog_name = ""
+    CREATE STRING status = ""
+    
+    OUTPUT("==================================================")
+    OUTPUT("PAYMENT STATUS")
+    OUTPUT("==================================================")
+    
+    enrollments = ReadFileLines(ENROLLMENT_FILE)
+    sport_programs = ReadFileLines(SPORT_PROGRAM_FILE)
+    
+    // Get program names
+    FOR EACH program IN sport_programs
+        data = SPLIT program BY "|"
+        IF LENGTH(data) >= 2 THEN
+            APPEND [data[0], data[1]] TO program_names
+        ENDIF
+    ENDFOR
+    
+    OUTPUT("Enrollment Payment Details:")
+    OUTPUT("------------------------------------------------------------")
+    OUTPUT("Program        Total Fee    Paid         Balance      Status")
+    OUTPUT("------------------------------------------------------------")
+    
+    FOR EACH enrollment IN enrollments
+        data = SPLIT enrollment BY "|"
+        IF LENGTH(data) >= 5 AND data[0] == trainee_id THEN
+            // Find program name
+            prog_name = "Unknown"
+            FOR EACH p IN program_names
+                IF p[0] == data[1] THEN
+                    prog_name = p[1]
+                ENDIF
+            ENDFOR
+            
+            total_fee = CONVERT(data[2]) TO FLOAT
+            paid = CONVERT(data[3]) TO FLOAT
+            balance = total_fee - paid
+            status = data[4]
+            
+            total_due = total_due + total_fee
+            total_paid = total_paid + paid
+            balance_due = balance_due + balance
+            
+            OUTPUT(prog_name + SPACE(15 - LENGTH(prog_name)) + 
+                   "RM" + FORMAT(total_fee, "0.00") + SPACE(10 - LENGTH(total_fee)) +
+                   "RM" + FORMAT(paid, "0.00") + SPACE(10 - LENGTH(paid)) +
+                   "RM" + FORMAT(balance, "0.00") + SPACE(10 - LENGTH(balance)) + status)
+        ENDIF
+    ENDFOR
+    
+    OUTPUT("------------------------------------------------------------")
+    OUTPUT("SUMMARY:")
+    OUTPUT("Total Due:    RM" + FORMAT(total_due, "0.00"))
+    OUTPUT("Total Paid:   RM" + FORMAT(total_paid, "0.00"))
+    OUTPUT("Balance Due:  RM" + FORMAT(balance_due, "0.00"))
+    
+    IF balance_due > 0 THEN
+        OUTPUT("You have outstanding balance. Please make payment at the reception.")
+    ELSE
+        OUTPUT("All payments are settled.")
+    ENDIF
+ENDDEFINE ViewPaymentStatus()
+
+// ==================== TRAINEE MENU ====================
+
+DEFINE TraineeMenu(username, password)
+    CREATE STRING trainee_id = ""
+    CREATE LIST trainee_data = []
+    CREATE STRING choice = ""
+    
+    trainee_id = GetTraineeIdByUsername(username)
+    
+    IF trainee_id == NULL THEN
+        OUTPUT("ERROR: Trainee not found!")
+        RETURN
+    ENDIF
+    
+    trainee_data = FindUserByUsername(TRAINEE_FILE, username)
+    IF trainee_data != NULL AND LENGTH(trainee_data) >= 4 THEN
+        OUTPUT("Welcome back, " + trainee_data[3] + "!")
+    ENDIF
+    
+    WHILE True DO
+        OUTPUT("==================================================")
+        OUTPUT("TRAINEE MENU")
+        OUTPUT("==================================================")
+        OUTPUT("1. Update Profile")
+        OUTPUT("2. View Training Schedule")
+        OUTPUT("3. Send Change Request")
+        OUTPUT("4. Update Pending Request")
+        OUTPUT("5. Delete Pending Request")
+        OUTPUT("6. View Payment Status")
+        OUTPUT("7. Exit")
+        OUTPUT("==================================================")
+        
+        OUTPUT("Select option (1-7): ")
+        INPUT into choice
+        
+        IF choice == "1" THEN
+            UpdateTraineeProfile(username, password)
+        ELSE IF choice == "2" THEN
+            ViewTrainingSchedule(trainee_id)
+        ELSE IF choice == "3" THEN
+            SendChangeRequest(trainee_id)
+        ELSE IF choice == "4" THEN
+            UpdatePendingRequest(trainee_id)
+        ELSE IF choice == "5" THEN
+            DeletePendingRequest(trainee_id)
+        ELSE IF choice == "6" THEN
+            ViewPaymentStatus(trainee_id)
+        ELSE IF choice == "7" THEN
+            OUTPUT("Logging out...")
+            BREAK
+        ELSE
+            OUTPUT("ERROR: Invalid option! Please try again.")
+        ENDIF
+    ENDWHILE
+ENDDEFINE TraineeMenu()
+
 BEGIN MAINLOGIC
     CREATE STRING username = "", password = "", user_role = "None"
     
