@@ -7,7 +7,7 @@ SPORT_PROGRAM_FILE = "sport_programs.txt"
 ENROLLMENT_FILE = "enrollments.txt"
 REQUEST_FILE = "requests.txt"
 TRANSACTION_FILE = "transactions.txt"
-
+#code
 def safe_open(file_name, mode="r"):
     if not os.path.exists(file_name):
         # Create the file if it doesn't exist so the code doesn't crash
