@@ -1030,7 +1030,7 @@ def receptionist_menu():
                 print("UPDATE TRAINEE'S SPORT TRAINING PROGRAM MENU")
                 print("=" * 50)
 
-                print("Please select and action: ")
+                print("Please select an action: ")
                 print("1. Delete trainee's program")
                 print("2. Add trainee's new program")
                 userChoice = input("==> ")
@@ -1377,3 +1377,4 @@ elif user_role == "Coach":
 elif user_role == "Trainee":
 
     trainee_menu(username, password)
+
