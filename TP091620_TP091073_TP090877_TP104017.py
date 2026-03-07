@@ -113,12 +113,11 @@ def transaction_data_sync():
 
     #identify last transaction
     target_data = content[-1].strip().split("|")
-    print(target_data)
     last_transaction_date = datetime.datetime.strptime(target_data[4], "%Y-%m-%d")
 
     current_date = datetime.datetime.now()
-    print(last_transaction_date)
-    print(current_date)
+    print("Last Transaction Date: ", last_transaction_date)
+    print("Current Date: ", current_date)
 
     #compare last transaction date with current date
     if (last_transaction_date.year, last_transaction_date.month) != (current_date.year, current_date.month):
@@ -1376,4 +1375,5 @@ elif user_role == "Receptionist":
 elif user_role == "Coach":
     coach_menu(username)
 elif user_role == "Trainee":
+
     trainee_menu(username, password)
