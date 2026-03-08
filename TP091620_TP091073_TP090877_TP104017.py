@@ -19,7 +19,7 @@ def newUserSignIn(username, password, user_role):
     newUser = [username, password, user_role]
     newUserText = "|".join(newUser)
      
-    with open("USER_FILE", "a") as file:
+    with open(USER_FILE, "a") as file:
         file.write(newUserText)
 
 def generate_id(filename, prefix):
@@ -82,7 +82,7 @@ def update_profile(file, usrnm, pswrd):
                 f.write("\n")
                 continue
     
-    with open("USER_FILE", "r") as f:
+    with open(USER_FILE, "r") as f:
         content = f.readlines()
 
     for line in content:
@@ -93,7 +93,7 @@ def update_profile(file, usrnm, pswrd):
             updatedUser = "|".join(data)
             print(updatedUser)
 
-    with open("USER_FILE", "w") as f:
+    with open(USER_FILE, "w") as f:
         for line in content:
             if line.strip().split("|")[0] != usrnm:
                 f.write(line)
@@ -103,7 +103,7 @@ def update_profile(file, usrnm, pswrd):
                 continue
     
 def transaction_data_sync():
-    with open("TRANSACTION_FILE", "r") as file:
+    with open(TRANSACTION_FILE, "r") as file:
         content = file.readlines()
 
     target_data = content[-1].strip().split("|")
@@ -117,7 +117,7 @@ def transaction_data_sync():
     if (last_transaction_date.year, last_transaction_date.month) != (current_date.year, current_date.month):
         print("New month detected. Resetting enrollments...")
 
-        with open("ENROLLMENT_FILE", "r") as file:
+        with open(ENROLLMENT_FILE, "r") as file:
             enrollment_lines = file.readlines()
         
         updated_enrollments = []
@@ -129,7 +129,7 @@ def transaction_data_sync():
             new_line = "|".join(data) + "\n"
             updated_enrollments.append(new_line)
 
-        with open("ENROLLMENT_FILE", "w") as file:
+        with open(ENROLLMENT_FILE, "w") as file:
             file.writelines(updated_enrollments)
 
         print("Data has been successfully synced with current month and year.")
@@ -311,7 +311,7 @@ def admin_menu(): #admin menu start
             target_id = ''
             monthly_income = 0.0
 
-            with open("SPORT_PROGRAM_FILE","r") as file:
+            with open(SPORT_PROGRAM_FILE,"r") as file:
                 for line in file:
                     sport_name = line.split("|")[1]
                     sport_programs.append(sport_name)
@@ -328,13 +328,13 @@ def admin_menu(): #admin menu start
                 if sportChoice < 1 or sportChoice > len(sport_programs) or not (1 <= month_input <= 12):
                     raise IndexError 
 
-                with open("SPORT_PROGRAM_FILE", "r") as file:    
+                with open(SPORT_PROGRAM_FILE, "r") as file:    
                     for line in file:
                         if line.split("|")[1] == sport_input:
                             target_id = line.split("|")[0]
                             break
                 
-                with open("TRANSACTION_FILE", "r") as file:
+                with open(TRANSACTION_FILE, "r") as file:
                     for line in file:
                         data = line.strip().split("|")
                         if data[2] == target_id and int(data[5]) == month_input:
@@ -395,19 +395,19 @@ def coach_menu(username):
             s_sched = input("Schedule (e.g. Mon 10am), if training happens for more than one day a week(e.g. Mon 10am-12pm, Tues 5pm-6pm): ")
             s_venue = input("Venue: ")
 
-            new_id = generate_id("SPORT_PROGRAM_FILE", "T")
+            new_id = generate_id(SPORT_PROGRAM_FILE, "T")
             new_line = f"{new_id}|{s_name}|{coach_id}|{s_fee}|{s_sched}|{s_venue}\n"
 
-            with open("SPORT_PROGRAM_FILE", "a") as file:
+            with open(SPORT_PROGRAM_FILE, "a") as file:
                 file.write(new_line)
             print(f">> Success: Added {s_name} with ID {new_id}.")
 
         elif choice == "3":
             print("\n--- UPDATE PROGRAM ---")
-            if not os.path.exists("SPORT_PROGRAM_FILE"): 
+            if not os.path.exists(SPORT_PROGRAM_FILE): 
                 print("No programs file found."); continue
 
-            with open("SPORT_PROGRAM_FILE", "r") as file:
+            with open(SPORT_PROGRAM_FILE, "r") as file:
                 all_lines = file.readlines()
 
             my_progs = []
@@ -430,7 +430,7 @@ def coach_menu(username):
                     u_sched = input("New Schedule: ")
                     u_venue = input("New Venue: ")
 
-                    with open("SPORT_PROGRAM_FILE", "w") as file:
+                    with open(SPORT_PROGRAM_FILE, "w") as file:
                         for line in all_lines:
                             d = line.strip().split("|")
                             if d[0] == target_id:
@@ -445,9 +445,9 @@ def coach_menu(username):
 
         elif choice == "4":
             print("\n--- DELETE PROGRAM ---")
-            if not os.path.exists("SPORT_PROGRAM_FILE"): 
+            if not os.path.exists(SPORT_PROGRAM_FILE): 
                 continue
-            with open("SPORT_PROGRAM_FILE", "r") as file: 
+            with open(SPORT_PROGRAM_FILE, "r") as file: 
                 all_lines = file.readlines()
             
             my_progs = []
@@ -461,7 +461,7 @@ def coach_menu(username):
                 sel = int(input("Select number to delete: ")) - 1
                 if 0 <= sel < len(my_progs):
                     target_id = my_progs[sel][0]
-                    with open("SPORT_PROGRAM_FILE", "w") as file:
+                    with open(SPORT_PROGRAM_FILE, "w") as file:
                         for line in all_lines:
                             d = line.strip().split("|")
                             if d[0] != target_id: file.write(line)
@@ -475,23 +475,23 @@ def coach_menu(username):
             print("\n--- ENROLLED TRAINEES ---")
          
             my_sports = []
-            if os.path.exists("SPORT_PROGRAM_FILE"):
-                with open("SPORT_PROGRAM_FILE", "r") as f:
+            if os.path.exists(SPORT_PROGRAM_FILE):
+                with open(SPORT_PROGRAM_FILE, "r") as f:
                     for line in f:
                         d = line.strip().split("|")
                         if len(d) > 2 and d[2] == coach_id.strip(): 
                             my_sports.append(d[0])
             t_ids = []
-            if os.path.exists("ENROLLMENT_FILE"):
-                with open("ENROLLMENT_FILE", "r") as f:
+            if os.path.exists(ENROLLMENT_FILE):
+                with open(ENROLLMENT_FILE, "r") as f:
                     for line in f:
                         d = line.strip().split("|")
                         if len(d) > 1 and d[1] in my_sports: 
                             t_ids.append(d[0])
             found = False
 
-            if os.path.exists("TRAINEE_FILE"):
-                with open("TRAINEE_FILE", "r") as f:
+            if os.path.exists(TRAINEE_FILE):
+                with open(TRAINEE_FILE, "r") as f:
                     for line in f:
                         d = line.strip().split("|")
                         if len(d) > 3 and d[0] in t_ids:
@@ -557,7 +557,7 @@ def receptionist_menu():
                 # Handle Sport Choices from File
                 sport_choices = []
 
-                with open("SPORT_PROGRAM_FILE", "r") as file:
+                with open(SPORT_PROGRAM_FILE, "r") as file:
                     lines = file.readlines()
 
                 for line in lines:
@@ -577,7 +577,7 @@ def receptionist_menu():
                     traineeSport = []
                     traineeSportID = []
                     traineeSportFee = []
-                    with open("SPORT_PROGRAM_FILE", "r") as file:
+                    with open(SPORT_PROGRAM_FILE, "r") as file:
                         lines = file.readlines()
 
                     for line in lines:
@@ -588,12 +588,12 @@ def receptionist_menu():
                                 traineeSportID.append(data[0])
                                 traineeSportFee.append(data[3])
                 # Generate ID and Save Trainee Data
-                newTraineeID = generate_id("TRAINEE_FILE", "TR")
+                newTraineeID = generate_id(TRAINEE_FILE, "TR")
                 newTrainee.insert(0, newTraineeID)
 
                 newTraineeText = "|".join(newTrainee)
 
-                with open("TRAINEE_FILE", "a") as file:
+                with open(TRAINEE_FILE, "a") as file:
                     file.write(newTraineeText)
                     file.write("\n")
 
@@ -603,7 +603,7 @@ def receptionist_menu():
                 for sport in range(len(traineeSportID)):
                     newEnrollmentData = [newTraineeID, traineeSportID[sport], traineeSportFee[sport], amountPaid, status]
 
-                    with open("ENROLLMENT_FILE", "a") as file:
+                    with open(ENROLLMENT_FILE, "a") as file:
                         newEnrollmentText = "|".join(newEnrollmentData)
                         file.write(newEnrollmentText)
                         file.write("\n")
@@ -625,7 +625,7 @@ def receptionist_menu():
                 traineeUsername = input("Enter trainee's USERNAME:  ")
 
                 # Find Trainee ID from file
-                with open("TRAINEE_FILE", "r") as file:
+                with open(TRAINEE_FILE, "r") as file:
                     content = file.readlines()
 
                 for line in content:
@@ -638,7 +638,7 @@ def receptionist_menu():
                     sport_choices = []
                     sport_choicesNames = []
                         
-                    with open("ENROLLMENT_FILE", "r") as file:
+                    with open(ENROLLMENT_FILE, "r") as file:
                         content = file.readlines()
                     
                     for line in content:
@@ -646,7 +646,7 @@ def receptionist_menu():
                         if data[0] == traineeID:
                             sport_choices.append(data[1])
 
-                    with open("SPORT_PROGRAM_FILE", "r") as file:
+                    with open(SPORT_PROGRAM_FILE, "r") as file:
                         content = file.readlines()
 
                     for line in content:
@@ -663,10 +663,10 @@ def receptionist_menu():
                     deleteChoice = int(input("==> ")) - 1
 
                     # Rewrite file without the deleted record
-                    with open("ENROLLMENT_FILE", "r") as file:
+                    with open(ENROLLMENT_FILE, "r") as file:
                         content = file.readlines()
                     
-                    with open("ENROLLMENT_FILE", "w") as file:    
+                    with open(ENROLLMENT_FILE, "w") as file:    
                         for line in content:
                             data = line.strip().split("|")
                             if not (data[0] == traineeID and data[1] == sport_choices[deleteChoice]):
@@ -681,7 +681,7 @@ def receptionist_menu():
                     all_sports = []
                     sport_choicesNames = []
                         
-                    with open("SPORT_PROGRAM_FILE", "r") as file:
+                    with open(SPORT_PROGRAM_FILE, "r") as file:
                         lines = file.readlines()
 
                     for line in lines:
@@ -699,7 +699,7 @@ def receptionist_menu():
                     if (i <= len(all_sports) for i in traineeSportChoice):
                         traineeSport = []
                         traineeSportID = []
-                        with open("SPORT_PROGRAM_FILE", "r") as file:
+                        with open(SPORT_PROGRAM_FILE, "r") as file:
                             lines = file.readlines()
 
                         for line in lines:
@@ -716,7 +716,7 @@ def receptionist_menu():
                     for sport in traineeSportID:
                         newEnrollmentData = [traineeID, sport, totalFee, amountPaid, status]
 
-                        with open("ENROLLMENT_FILE", "a") as file:
+                        with open(ENROLLMENT_FILE, "a") as file:
                             newEnrollmentText = "|".join(newEnrollmentData)
                             file.write(newEnrollmentText)
                             file.write("\n")
@@ -737,10 +737,10 @@ def receptionist_menu():
 
                 # Find Trainee ID
                 try:
-                    if not os.path.exists("TRAINEE_FILE"):
+                    if not os.path.exists(TRAINEE_FILE):
                         continue 
                     found = False
-                    with open("TRAINEE_FILE", "r") as file:
+                    with open(TRAINEE_FILE, "r") as file:
                         trainee_datas = file.readlines()
                         
                         for trainee in trainee_datas:
@@ -755,7 +755,7 @@ def receptionist_menu():
                 except ValueError:
                     print("Invalid input.")
                 #What are the sport programs enrolled by this trainee?
-                with open("ENROLLMENT_FILE", "r") as file:
+                with open(ENROLLMENT_FILE, "r") as file:
                     content = file.readlines()
 
                 for line in content:
@@ -766,7 +766,7 @@ def receptionist_menu():
 
                 #Now we have a list of training IDs of sport programs that are enrolled
 
-                with open("SPORT_PROGRAM_FILE", "r") as file:
+                with open(SPORT_PROGRAM_FILE, "r") as file:
                     content = file.readlines()
 
                 for line in content:
@@ -792,7 +792,7 @@ def receptionist_menu():
                 print("How much you wish to pay?(e.g. 200)")
                 paymentValue = float(input("==> "))
                 
-                with open("ENROLLMENT_FILE", "r") as file:
+                with open(ENROLLMENT_FILE, "r") as file:
                     content = file.readlines()
 
                 updatedText = []
@@ -811,7 +811,7 @@ def receptionist_menu():
                             data[4] = "Paid"
                     updatedText.append("|".join(data))
                         
-                with open("ENROLLMENT_FILE", "w") as file:
+                with open(ENROLLMENT_FILE, "w") as file:
                     for line in updatedText:
                         print("Writing updated content in file... ")
                         file.write(line)
@@ -820,12 +820,12 @@ def receptionist_menu():
             #add transaction to transaction log in transactions.py
                 today = datetime.date.today().strftime("%Y-%m-%d")
                 now = datetime.datetime.now().strftime("%H:%M:%S")
-                newTransactionID = generate_id("TRANSACTION_FILE", "TX")
+                newTransactionID = generate_id(TRANSACTION_FILE, "TX")
                 
                 newTransactionData = [newTransactionID, traineeID, sportProgramPaymentChoice, "{:.2f}".format(paymentValue), today]
                 newTransactionDataText = "|".join(newTransactionData)
 
-                with open("TRANSACTION_FILE", "a") as file:
+                with open(TRANSACTION_FILE, "a") as file:
                     file.write(newTransactionDataText)
                     file.write("\n")
 
@@ -835,7 +835,7 @@ def receptionist_menu():
                 print("==================================================")
                 deleteTraineeUsername = input("Enter trainee's USERNAME: ")
 
-                with open("TRAINEE_FILE", "r") as file:
+                with open(TRAINEE_FILE, "r") as file:
                     content = file.readlines()
                 found = False
                 for line in content:
@@ -850,7 +850,7 @@ def receptionist_menu():
                 confirmation = input(f"Are you sure to delete trainee {deleteTraineeUsername}?: ")
                 if confirmation.upper() == "YES":
                     #delete trainee from TRAINEE_FILE file
-                    with open("TRAINEE_FILE", "w") as file:
+                    with open(TRAINEE_FILE, "w") as file:
                         for line in content:
                             data = line.strip().split("|")
                             if data[1] != deleteTraineeUsername:
@@ -859,10 +859,10 @@ def receptionist_menu():
                                 deleteTraineeID = data[0]
 
                     #delete trainee from enrollment.txt
-                    with open("ENROLLMENT_FILE", "r") as file:
+                    with open(ENROLLMENT_FILE, "r") as file:
                         content = file.readlines()
                     
-                    with open("ENROLLMENT_FILE", "w") as file:
+                    with open(ENROLLMENT_FILE, "w") as file:
                         for line in content:
                             data = line.strip().split("|")
                             if data[0] != deleteTraineeID:
@@ -1297,7 +1297,7 @@ def trainee_menu(username, password):
         choice = input("Select option (1-7): ").strip()
         
         if choice == "1":
-            update_profile("TRAINEE_FILE", username, password)
+            update_profile(TRAINEE_FILE, username, password)
         elif choice == "2":
             view_training_schedule(trainee_id)
         elif choice == "3":
@@ -1326,7 +1326,7 @@ while tryCount < 3:
     password = input("Please enter your password:  ")
     found = False 
 
-    with open("USER_FILE", "r") as file:
+    with open(USER_FILE, "r") as file:
         for line in file:
             data = line.strip().split("|")
             if data[0] == username and data[1] == password:
