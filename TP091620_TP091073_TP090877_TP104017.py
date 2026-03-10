@@ -2,7 +2,7 @@ import os
 import datetime
 
 USER_FILE = "users.txt"
-TRAINEE_FILE = "trainee.txt"
+TRAINEE_FILE = "    "
 SPORT_PROGRAM_FILE = "sport_programs.txt"
 ENROLLMENT_FILE = "enrollments.txt"
 REQUEST_FILE = "requests.txt"
@@ -217,10 +217,10 @@ def admin_menu(): #admin menu start
                 else:
                     print(f'Coach {coachUsername} does not exist.')
 
-                with open('USER_FILE', 'r') as file:
+                with open(USER_FILE, 'r') as file:
                     lines = file.readlines()
 
-                with open('USER_FILE', 'w') as file:
+                with open(USER_FILE, 'w') as file:
                     for user in lines:
                         data = user.strip().split('|')
                         if data[0] == coachUsername and data[1] == coachPassword:
@@ -288,10 +288,10 @@ def admin_menu(): #admin menu start
                 else:
                     print(f'Receptionist {receptionistUsername} does not exist')
 
-                with open('USER_FILE', 'r') as file:
+                with open(USER_FILE, 'r') as file:
                     lines = file.readlines()
 
-                with open('USER_FILE', 'w') as file:
+                with open(USER_FILE, 'w') as file:
                     for user in lines:
                         data = user.strip().split('|')
                         if data[0] == receptionistUsername and data[1] == receptionistPassword:
