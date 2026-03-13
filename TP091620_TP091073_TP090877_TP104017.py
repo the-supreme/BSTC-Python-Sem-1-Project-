@@ -2,7 +2,7 @@ import os
 import datetime
 
 USER_FILE = "users.txt"
-TRAINEE_FILE = "    "
+TRAINEE_FILE = "trainee.txt"
 SPORT_PROGRAM_FILE = "sport_programs.txt"
 ENROLLMENT_FILE = "enrollments.txt"
 REQUEST_FILE = "requests.txt"
