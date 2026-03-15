@@ -187,7 +187,7 @@ def admin_menu(): #admin menu start
 
             print("Password accepted.")
 
-            print(f"Please confirm that you want to register coach {coachName}. (Enter 'yes' if you're confirming)")
+            print(f"Please confirm that you want to register coach {coachName}. (yes/no)")
             confirm_action = input("==> ").lower()
 
             if (confirm_action != "yes"):
@@ -266,7 +266,7 @@ def admin_menu(): #admin menu start
 
             print("Password accepted.")
             
-            print(f"Please confirm that you want to register receptionist {receptionistName}. (Enter 'yes' if you're confirming)")
+            print(f"Please confirm that you want to register receptionist {receptionistName}. (yes/no)")
             confirm_action = input("==> ").lower()
 
             if (confirm_action != "yes"):
