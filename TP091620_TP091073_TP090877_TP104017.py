@@ -246,8 +246,8 @@ def admin_menu(): #admin menu start
                         file.write(user)
 
             elif deleteChoice == 'no':
-                    print('Exit.')
-                    break
+                    print('Deletion cancelled.')
+                    continue
 
         elif actionChoice == "4": #register receptionist
             print('='*50)
@@ -325,8 +325,8 @@ def admin_menu(): #admin menu start
                         file.write(user)
                         
             elif deleteChoice == 'no':
-                    print('Exit.')
-                    break
+                    print('Deletion cancelled.')
+                    continue
 
         elif actionChoice == "6": #monthly income
             print('='*50)
