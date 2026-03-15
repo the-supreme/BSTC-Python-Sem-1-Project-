@@ -65,7 +65,7 @@ def update_profile(file, usrnm, pswrd):
 
     print("Password accepted.")
 
-    print("Are you sure to update your profile? ")
+    print("Are you sure to update your profile?(yes/no) ")
     confirm_action = input("==> ").lower()
 
     if (confirm_action != "yes"):
