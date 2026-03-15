@@ -1,0 +1,8 @@
+C01|coach_mike|pass123|Mike Tyson
+C02|coach_sara|pass123|Sara Williams
+C03|coach_lee|pass123|Lee Chong Wei
+C04|coach_nicol|pass123|Nicol David
+C05|coach_panda|pass123|Pandelela Rinong
+C06|coach_tiger|pass123|Tiger Woods
+C07|coach_alex|pass123|Alex Ferguson
+C08|coach_mary|pass123|Mary Kom

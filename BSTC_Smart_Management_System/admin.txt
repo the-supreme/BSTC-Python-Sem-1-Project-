@@ -1,0 +1,8 @@
+admin01|admin_ali|pass123|Ali Ahmad
+admin02|admin_bala|pass123|Bala Krishnan
+admin03|admin_chong|pass123|Chong Wei
+admin04|admin_david|pass123|David Beckham
+admin05|admin_elisa|pass123|Elisa Lam
+admin06|admin_fahad|pass123|Fahad Mustafa
+admin07|admin_gina|pass123|Gina Rinehart
+admin08|admin_harry|pass123|Harry Potter
