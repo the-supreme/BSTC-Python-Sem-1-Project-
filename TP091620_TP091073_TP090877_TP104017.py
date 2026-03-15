@@ -117,12 +117,11 @@ def transaction_data_sync():
         content = file.readlines()
 
     target_data = content[-1].strip().split("|")
-    print(target_data)
     last_transaction_date = datetime.datetime.strptime(target_data[4], "%Y-%m-%d")
 
     current_date = datetime.datetime.now()
-    print(last_transaction_date)
-    print(current_date)
+    print("Last Transaction Date: ", last_transaction_date)
+    print("Current Date: ", current_date)
 
     if (last_transaction_date.year, last_transaction_date.month) != (current_date.year, current_date.month):
         print("New month detected. Resetting enrollments...")
