@@ -2,6 +2,9 @@ import os
 import datetime
 
 USER_FILE = "users.txt"
+ADMIN_FILE = "admin.txt"
+RECEPTIONIST_FILE = "receptionist.txt"
+COACH_FILE = "coach.txt"
 TRAINEE_FILE = "trainee.txt"
 SPORT_PROGRAM_FILE = "sport_programs.txt"
 ENROLLMENT_FILE = "enrollments.txt"
@@ -61,6 +64,13 @@ def update_profile(file, usrnm, pswrd):
             print("Invalid password! Please use only letters and numbers.")
 
     print("Password accepted.")
+
+    print("Are you sure to update your profile? ")
+    confirm_action = input("==> ").lower()
+
+    if (confirm_action != "yes"):
+        print("Update terminated.")
+        return 
 
     with open(file, "r") as f:
         lines = f.readlines()
@@ -136,7 +146,7 @@ def transaction_data_sync():
 
 def admin_menu(): #admin menu start
     actionChoice = ""
-    with open('admin.txt','r') as file:
+    with open(ADMIN_FILE,'r') as file:
         content = file.readlines()
     for admin in content:
         admin_data = admin.strip().split('|')
@@ -159,7 +169,7 @@ def admin_menu(): #admin menu start
             print('='*50)
             print('Update Profile')
             print('='*50)
-            update_profile("admin.txt", username, password)
+            update_profile(ADMIN_FILE, username, password)
 
         elif actionChoice == "2":
             print('='*50)
@@ -176,14 +186,22 @@ def admin_menu(): #admin menu start
                 if not coachPassword.isalnum():
                     print("Invalid password! Please use only letters and numbers.")
 
-            print("Password accepted.")     
+            print("Password accepted.")
+
+            print(f"Please confirm that you want to register coach {coachName}. (Enter 'yes' if you're confirming)")
+            confirm_action = input("==> ").lower()
+
+            if (confirm_action != "yes"):
+                print("Registration terminated.")
+                continue
+                
             newCoach = [coachUsername,coachPassword,coachName]
 
-            newCoachID = generate_id('coach.txt','C')
+            newCoachID = generate_id(COACH_FILE,'C')
             newCoach.insert(0, newCoachID)
             newCoachText = '|'.join(newCoach)
 
-            with open('coach.txt','a') as file:
+            with open(COACH_FILE,'a') as file:
                file.write(newCoachText + '\n')
 
             newUserSignIn(coachUsername, coachPassword, role + '\n')
@@ -201,10 +219,10 @@ def admin_menu(): #admin menu start
 
             if deleteChoice == 'yes':
                 found = False
-                with open('coach.txt', 'r') as file:
+                with open(COACH_FILE, 'r') as file:
                     lines = file.readlines()
 
-                with open('coach.txt', 'w') as file:
+                with open(COACH_FILE, 'w') as file:
                     for coach in lines:
                         data = coach.strip().split('|')
                         if data[1] == coachUsername and data[2] == coachPassword:
@@ -242,19 +260,27 @@ def admin_menu(): #admin menu start
             receptionistUsername = input("Please create receptionist's username: ")
             receptionistPassword = ""
             while not receptionistPassword.isalnum():
-                receptionistPassword = input("Please enter coach's password (alphanumeric only): ")
+                receptionistPassword = input("Please enter receptionist's password (alphanumeric only): ")
                 
                 if not receptionistPassword.isalnum():
                     print("Invalid password! Please use only letters and numbers.")
 
             print("Password accepted.")
+            
+            print(f"Please confirm that you want to register receptionist {receptionistName}. (Enter 'yes' if you're confirming)")
+            confirm_action = input("==> ").lower()
+
+            if (confirm_action != "yes"):
+                print("Registration terminated.")
+                continue
+
             newReceptionist = [receptionistUsername, receptionistPassword,receptionistName]
 
-            newReceptionistID = generate_id('receptionist.txt', 'R')
+            newReceptionistID = generate_id(RECEPTIONIST_FILE, 'R')
             newReceptionist.insert(0, newReceptionistID)
             newReceptionistText = '|'.join(newReceptionist)
 
-            with open('receptionist.txt', 'a') as file:
+            with open(RECEPTIONIST_FILE, 'a') as file:
                 file.write(newReceptionistText + '\n')
 
             newUserSignIn(receptionistUsername, receptionistPassword, role + '\n')
@@ -272,10 +298,10 @@ def admin_menu(): #admin menu start
 
             if deleteChoice == 'yes':
                 found = False
-                with open('receptionist.txt', 'r') as file:
+                with open(RECEPTIONIST_FILE, 'r') as file:
                     lines = file.readlines()
 
-                with open('receptionist.txt', 'w') as file:
+                with open(RECEPTIONIST_FILE, 'w') as file:
                     for receptionist in lines:
                         data = receptionist.strip().split('|')
                         if data[1] == receptionistUsername and data[2] == receptionistPassword:
@@ -322,7 +348,7 @@ def admin_menu(): #admin menu start
             print('='*50)
             
             try:
-                sportChoice = int(input('Please enter the choice of sport: '))
+                sportChoice = int(input('Please enter the choice of sport(number of the sport): '))
                 sport_input = sport_programs[sportChoice-1]
                 month_input = int(input('Please enter the month (in integers): '))
                 if sportChoice < 1 or sportChoice > len(sport_programs) or not (1 <= month_input <= 12):
@@ -358,11 +384,11 @@ def coach_menu(username):
     coach_id = ""
     coach_name = ""
 
-    if not os.path.exists("coach.txt"):
-        print("Error: 'coach.txt' not found. Please run Setup Mode first.")
+    if not os.path.exists(COACH_FILE):
+        print("Error: COACH_FILE not found. Please run Setup Mode first.")
         return
 
-    with open("coach.txt", "r") as file:
+    with open(COACH_FILE, "r") as file:
         for line in file:
             data = line.strip().split("|")
             if len(data) >= 4 and data[1] == username:
@@ -386,7 +412,7 @@ def coach_menu(username):
         choice = input("Select action (1-6): ")
 
         if choice == "1":
-            update_profile("coach.txt", username, password)
+            update_profile(COACH_FILE, username, password)
 
         elif choice == "2":
             print("\n--- ADD TRAINING PROGRAM ---")
@@ -508,7 +534,7 @@ def coach_menu(username):
 
 def receptionist_menu():
     while True:
-        with open("receptionist.txt", "r") as file:
+        with open(RECEPTIONIST_FILE, "r") as file:
             for receptionist in file:
                 receptionist_data = receptionist.strip().split("|")
                 if (receptionist_data[1] == username):
@@ -532,7 +558,7 @@ def receptionist_menu():
             print("Invalid input. Please try again. ")
         else:
             if actionChoice == "1":
-                update_profile("receptionist.txt", username, password)
+                update_profile(RECEPTIONIST_FILE, username, password)
             elif actionChoice == "2":
                 print("=" * 50)
                 print("NEW TRAINEE REGISTRATION MENU")
@@ -553,6 +579,14 @@ def receptionist_menu():
                 traineeContact = input("Create a new trainee's CONTACT NUMBER: ")
                 traineeAddress = input("Create a new trainee's ADDRESS: ")
                 traineeEmail = input("Create a new trainee's EMAIL: ")
+
+                print(f"Please confirm that you want to register trainee {traineeName}. (Enter 'yes' if you're confirming)")
+                confirm_action = input("==> ").lower()
+
+                if (confirm_action != "yes"):
+                    print("Registration terminated.")
+                    continue
+
                 newTrainee = [traineeUsername, traineePassword, traineeName, traineePassport, traineeEmail, traineeContact, traineeAddress]
                 # Handle Sport Choices from File
                 sport_choices = []
@@ -617,7 +651,7 @@ def receptionist_menu():
                 print("UPDATE TRAINEE'S SPORT TRAINING PROGRAM MENU")
                 print("=" * 50)
 
-                print("Please select and action: ")
+                print("Please select an action: ")
                 print("1. Delete trainee's program")
                 print("2. Add trainee's new program")
                 userChoice = input("==> ")
